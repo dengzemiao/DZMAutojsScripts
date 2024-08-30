@@ -16,3 +16,9 @@
         └── ....              # 可以自行根据项目需要，创建层级文件夹管理
   ├── dingding_hb             # 项目目录（钉钉红包）
   ```
+
+- 下载 [auto.js 4.1.1 免费版](http://www.autojs.cc/)
+
+  - 如果 auto.js 打不开可以使用 [autoxjs](http://doc.autoxjs.com/#/) ，它是基于 auto.js 4.1.1 进行维护的。
+
+  - 附文章：[Autox.js 脚本开发环境搭建，从案例到打包 apk（详细流程）](https://blog.csdn.net/zz00008888/article/details/133711217)
