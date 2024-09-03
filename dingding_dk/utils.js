@@ -1,11 +1,13 @@
 // 唤醒手机
 function wakeupPhone() {
   // 如果屏幕没有点亮，则唤醒设备
-  device.wakeUpIfNeeded();
+  // device.wakeUpIfNeeded();
   // 屏幕是否唤醒成功
   if (!device.isScreenOn()) {
-    // 没有则再次尝试唤醒
-    keepDrow();
+    // 如果屏幕关闭，则打开屏幕
+    device.wakeUp();
+    // 等待屏幕点亮
+    sleep(1000);
   } else {
     // 屏幕保持常亮的时间（单位毫秒）如果不加参数，则一直保持屏幕常亮
     // 在某些设备上，如果不加参数 timeout，只能在 Autox.js 的界面保持屏幕常亮，在其他界面会自动失效，这是因为设备的省电策略造成的。因此，建议使用比较长的时长来代替"一直保持屏幕常亮"的功能
