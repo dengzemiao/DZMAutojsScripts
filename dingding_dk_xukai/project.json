@@ -1,10 +1,10 @@
 {
-    "name": "新建项目",
+    "name": "凯狗专用",
     "main": "main.js",
     "ignore": [
         "build"
     ],
-    "packageName": "com.dzm.dingdingdk",
+    "packageName": "com.dzm.dingdingdk_xukai",
     "versionName": "1.0.0",
     "versionCode": 1
 }
