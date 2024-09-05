@@ -3,20 +3,17 @@
 
 // 权限处理
 // 检查无障碍服务是否已经启用，如果没有启用则跳转到无障碍服务启用界面，并等待无障碍服务启动；当无障碍服务启动后脚本会继续运行。
-auto.waitFor();
+// auto.waitFor();
+// auto.service();
 // 检查悬浮窗权限
-if (!floaty.checkPermission()) {
-  // 提示
-  toast("本服务需要悬浮窗权限来显示悬浮窗，请在随后的界面中允许并重新运行本脚本。");
-  // 没有悬浮窗权限，提示用户并跳转请求
-  floaty.requestPermission();
-  // 退出
-  exit();
-}
-// 电池优化
-// app.startActivity({
-//   action: "android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS"
-// });
+// if (!floatyCheckPermission()) {
+//   // 提示
+//   toast("本服务需要悬浮窗权限来显示悬浮窗，请在随后的界面中允许并重新运行本脚本。");
+//   // 没有悬浮窗权限，提示用户并跳转请求
+//   floatyRequestPermission();
+//   // 退出
+//   exit();
+// }
 
 // 本地存储
 var storage = storages.create('dingding_dk_dzm');
@@ -32,19 +29,31 @@ var times = storage.get('times') || [];
 var today = getCurrentDate();
 // 服务是否启动了
 var isRun = false;
+// 运行子线程
+var thread = null;
 
 // 入口函数
 function main() {
   // UI渲染
   ui.layout(
-    <vertical padding="16">
-      <text textSize="16sp" textColor="black" text="上班"/>
-      <timepicker timePickerMode="spinner" id="timepicker1" />
-      <text textSize="16sp" textColor="black" text="下班"/>
-      <timepicker timePickerMode="spinner" id="timepicker2" />
-      <button marginTop="10" id="submit" text="启动服务"/>
-      <text textSize="16sp" marginTop="20" textColor="#BCBDBE" text="提示：推荐在设置中添加本应用为白名单，以免被系统杀死，比如电池中。"/>
-    </vertical>
+    <frame>
+      <vertical>、
+        <ScrollView>
+          <vertical padding="16">
+            <text textSize="16sp" textColor="black" text="上班"/>
+            <timepicker timePickerMode="spinner" id="timepicker1" />
+            <text textSize="16sp" textColor="black" text="下班"/>
+            <timepicker timePickerMode="spinner" id="timepicker2" />
+            <button id="submit" text="启动服务"/>
+            <text textSize="16sp" marginTop="20" textColor="#28A745" id="hint0" text="提示：本服务需要悬浮窗权限、无障碍服务启动，推荐设置电池不优化白名单保活。"/>
+            <text textSize="16sp" marginTop="20" textColor="#28A745" id="hint0" text="注意：根据要求，依次打开下面权限，才能正常使用，点击没跳转则多次点击尝试。"/>
+            <text textSize="16sp" marginTop="20" textColor="#FF4500" id="hint1" text="【必选】1、启用无障碍服务。（点击）"/>
+            <text textSize="16sp" marginTop="20" textColor="#FF4500" id="hint2" text="【必选】2、打开悬浮窗权限。（点击）"/>
+            <text textSize="16sp" marginTop="20" textColor="#0000FF" id="hint3" text="【建议】3、打开电池优化白名单。（点击）"/>
+          </vertical>
+        </ScrollView>
+      </vertical>
+    </frame>
   );
   // 设置为24小时制
   ui.timepicker1.setIs24HourView(true);
@@ -56,6 +65,18 @@ function main() {
     ui.timepicker2.setHour(times[1].split(':')[0]);
     ui.timepicker2.setMinute(times[1].split(':')[1]);
   }
+  // 点击无障碍服务
+  ui.hint1.on("click", function() {
+    accessibilityServicePage();
+  })
+  // 点击悬浮窗权限
+  ui.hint2.on("click", function() {
+    floatyRequestPermission();
+  });
+  // 点击电池优化
+  ui.hint3.on("click", function() {
+    batteryOptimizationPage();
+  });
   // 点击启动
   ui.submit.on("click", function() {
     if (isRun) {
@@ -115,14 +136,14 @@ function createWindow () {
   // 初始化悬浮窗位置到屏幕中心
   window.setPosition(0, centerY);
   // 设置按钮点击事件
-  window.status.click(function () {
-    // 打开当前应用
-    try {
-      app.launchPackage(currentPackage());
-    } catch (error) {
-      toast("打开应用失败");
-    }
-  });
+  // window.status.click(function () {
+  //   // 打开当前应用
+  //   try {
+  //     app.launchPackage(context.getPackageName());
+  //   } catch (error) {
+  //     toast("打开应用失败");
+  //   }
+  // });
   // 初始化一些变量
   var x = 0, y = 0;
   var windowX, windowY;
@@ -158,18 +179,21 @@ function createWindow () {
 // 启动服务
 function run (timestamps) {
   if (!isRun) {
-    console.log('启动服务');
-    // 创建悬浮窗
-    floaty.closeAll();
-    createWindow();
-    // 更新文案
-    ui.submit.setText("停止服务");
-    // 设置启动状态
-    isRun = true;
-    // 添加定时器
-    addTimer(timestamps);
-    // 提示用户
-    toast("服务已启动");
+    // 子线程处理
+    thread = threads.start(function () {
+      console.log('启动服务');
+      // 创建悬浮窗
+      floaty.closeAll();
+      createWindow();
+      // 更新文案
+      ui.submit.setText("停止服务");
+      // 设置启动状态
+      isRun = true;
+      // 添加定时器
+      addTimer(timestamps);
+      // 提示用户
+      toast("服务已启动");
+    });
   }
 }
 
@@ -177,6 +201,9 @@ function run (timestamps) {
 function stop () {
   if (isRun) {
     console.log('停止服务');
+    // 停止子线程
+    thread && thread.interrupt();
+    thread = null;
     // 移除定时器
     removeTimer();
     // 移除悬浮窗
@@ -213,7 +240,7 @@ function addTimer(timestamps) {
   // 移除定时器
   removeTimer();
   // 定时唤醒屏幕
-   timer = setInterval(() => {
+  timer = setInterval(() => {
     // 每天执行的情况
     if (isEveryday) {
       // 当前日期
@@ -275,9 +302,13 @@ function refreshTimestamps(today) {
 
 // 唤醒设备并解锁
 function wakeUpAndUnlock() {
+  // 尝试唤醒屏幕
+  device.wakeUpIfNeeded();
+  // 等待屏幕点亮
+  sleep(1000);
   // 屏幕是否唤醒成功
   if (!device.isScreenOn()) {
-    // 如果屏幕关闭，则打开屏幕
+    // 如果还没有点亮，强制唤醒
     device.wakeUp();
     // 等待屏幕点亮
     sleep(1000);
@@ -337,7 +368,7 @@ function removeExpiredTimestamps(timestamps) {
   });
   // 移除过期时间戳
   timestamps = timestamps.filter(function(timestamp) {
-    return !expiredTimestamps.includes(timestamp);
+    return !(expiredTimestamps.indexOf(timestamp) !== -1);
   });
   // 日志输出
   // console.log(`
@@ -371,14 +402,21 @@ function datetimeToTimestamp(datetime) {
 function timestampToDatetime(timestamp) {
   const date = new Date(timestamp);
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  // 如果小于10，则在前面加上'0'
+  const formattedMonth = month < 10 ? '0' + month : month;
+  const formattedDay = day < 10 ? '0' + day : day;
+  const formattedHours = hours < 10 ? '0' + hours : hours;
+  const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+  const formattedSeconds = seconds < 10 ? '0' + seconds : seconds;
   // 返回格式化后的字符串
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  return year + '-' + formattedMonth + '-' + formattedDay + ' ' + formattedHours + ':' + formattedMinutes + ':' + formattedSeconds;
 }
+
 
 // 获取当前日期（日期格式：YYYY-MM-DD）
 function getCurrentDate() {
@@ -387,11 +425,37 @@ function getCurrentDate() {
   // 获取当前年份
   const year = date.getFullYear();
   // 获取当前月份（月份从0开始，所以要加1）
-  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const month = date.getMonth() + 1;
   // 获取当前日期
-  const day = String(date.getDate()).padStart(2, '0');
+  const day = date.getDate();
+  // 如果月份小于10，则在前面加上'0'
+  const formattedMonth = month < 10 ? '0' + month : month;
+  // 如果日期小于10，则在前面加上'0'
+  const formattedDay = day < 10 ? '0' + day : day;
   // 返回格式化后的字符串
-  return `${year}-${month}-${day}`;
+  return year + '-' + formattedMonth + '-' + formattedDay;
+}
+
+// 请求悬浮窗权限
+function floatyRequestPermission () {
+  app.startActivity({
+    action: "android.settings.action.MANAGE_OVERLAY_PERMISSION",
+    data: "package:" + context.getPackageName()
+  });
+}
+
+// 电池优化页面
+function batteryOptimizationPage() {
+  app.startActivity({
+    action: "android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS"
+  });
+}
+
+// 无障碍服务页面
+function accessibilityServicePage() {
+  app.startActivity({
+    action: "android.settings.ACCESSIBILITY_SETTINGS"
+  });
 }
 
 // 调用
