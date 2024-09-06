@@ -50,6 +50,7 @@ function main() {
             <text textSize="16sp" textColor="black" text="操作步骤间隔时间（单位：毫秒，1000毫秒 = 1秒）"/>
             <input hint="请输入" inputType="number" id="sleepInterval" />
             <button marginTop="20" id="submit" text="启动服务"/>
+            <text textSize="16sp" marginTop="20" textColor="#28A745" id="hint0" text="提示：请将【钉钉】放到手机应用列表第一页，并能看到 app 名称，如果折叠存放只能看到应用 icon，无法看到 app 名称。"/>
             <text textSize="16sp" marginTop="20" textColor="#28A745" id="hint0" text="提示：本服务需要悬浮窗权限、无障碍服务启动，推荐设置电池不优化白名单保活。"/>
             <text textSize="16sp" marginTop="20" textColor="#28A745" id="hint0" text="注意：根据要求，依次打开下面权限，才能正常使用，点击没跳转则多次点击尝试。"/>
             <text textSize="16sp" marginTop="20" textColor="#FF4500" id="hint1" text="【必选】1、启用无障碍服务。（点击）"/>
