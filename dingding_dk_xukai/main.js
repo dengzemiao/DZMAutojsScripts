@@ -4,7 +4,6 @@
 // 权限处理
 // 检查无障碍服务是否已经启用，如果没有启用则跳转到无障碍服务启用界面，并等待无障碍服务启动；当无障碍服务启动后脚本会继续运行。
 // auto.waitFor();
-// auto.service();
 // 检查悬浮窗权限
 // if (!floatyCheckPermission()) {
 //   // 提示
@@ -182,6 +181,8 @@ function run (timestamps) {
     // 子线程处理
     thread = threads.start(function () {
       console.log('启动服务');
+      // 前台保活
+      KeepAliveService.start('dingding_dk_dzm', '凯狗专业列车');
       // 创建悬浮窗
       floaty.closeAll();
       createWindow();
@@ -201,6 +202,8 @@ function run (timestamps) {
 function stop () {
   if (isRun) {
     console.log('停止服务');
+    // 停止前台保活
+    KeepAliveService.stop();
     // 停止子线程
     thread && thread.interrupt();
     thread = null;
@@ -313,15 +316,27 @@ function wakeUpAndUnlock() {
     // 等待屏幕点亮
     sleep(1000);
   }
-  // 解锁，模拟上划解锁操作，起点和终点的坐标取决于你的设备的屏幕分辨率
-  // 屏幕中间的 X 坐标
+  // 针对机型处理
   var startX = device.width / 2;
   // 起点 Y 坐标（靠近屏幕底部）
   var startY = device.height * 0.8;
   // 终点 Y 坐标（靠近屏幕顶部）
   var endY = device.height * 0.2;
-  // 进行上划操作，500 是滑动时间（单位：毫秒）
+  // 进行下划操作（单位：毫秒）
+  swipe(startX, endY, startX, startY, 500);
+  // 等待下拉菜单
+  sleep(1000);
+  // 进行上划操作（单位：毫秒）
   swipe(startX, startY, startX, endY, 500);
+  // 解锁，模拟上划解锁操作，起点和终点的坐标取决于你的设备的屏幕分辨率
+  // 屏幕中间的 X 坐标
+  // var startX = device.width / 2;
+  // // 起点 Y 坐标（靠近屏幕底部）
+  // var startY = device.height * 0.8;
+  // // 终点 Y 坐标（靠近屏幕顶部）
+  // var endY = device.height * 0.2;
+  // // 进行上划操作，500 是滑动时间（单位：毫秒）
+  // swipe(startX, startY, startX, endY, 500);
   // 等待解锁完成
   sleep(1000);
 }
@@ -457,6 +472,43 @@ function accessibilityServicePage() {
     action: "android.settings.ACCESSIBILITY_SETTINGS"
   });
 }
+
+// 前台服务保活
+let KeepAliveService = {
+  // 开启
+  start: function (id, title) {
+    try {
+      id = id || "";
+      let channel_id = id + ".foreground";
+      let channel_name = title + " 前台服务通知";
+      let content_title = title + " 正在运行中";
+      let content_text = "请勿手动移除该通知";
+      let ticker = title + "已启动";
+      let manager = context.getSystemService(android.app.Service.NOTIFICATION_SERVICE);
+      let notification;
+      let icon = context.getResources().getIdentifier("ic_3d_rotation_black_48dp", "drawable", context.getPackageName());
+      if (device.sdkInt >= 26) {
+        let channel = new android.app.NotificationChannel(channel_id, channel_name, android.app.NotificationManager.IMPORTANCE_DEFAULT);
+        channel.enableLights(true);
+        channel.setLightColor(0xff0000);
+        channel.setShowBadge(false);
+        manager.createNotificationChannel(channel);
+        notification = new android.app.Notification.Builder(context, channel_id).setContentTitle(content_title).setContentText(content_text).setWhen(new Date().getTime()).setSmallIcon(icon).setTicker(ticker).setOngoing(true).build();
+      } else {
+        notification = new android.app.Notification.Builder(context).setContentTitle(content_title).setContentText(content_text).setWhen(new Date().getTime()).setSmallIcon(icon).setTicker(ticker).build();
+      }
+      manager.notify(1, notification);
+    } catch (error) {
+      console.warn("前台保活服务启动失败:" + error);
+      console.warn("保活服务启动失败,不影响辅助的正常运行,继续挂机即可.");
+    }
+  },
+  // 停止
+  stop: function () {    
+    let manager = context.getSystemService(android.app.Service.NOTIFICATION_SERVICE);
+    manager.cancelAll();
+  }
+};
 
 // 调用
 main();
