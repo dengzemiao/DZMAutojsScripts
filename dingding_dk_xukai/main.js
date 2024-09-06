@@ -23,7 +23,7 @@ var timer = null;
 // 间隔时间（单位：毫秒）
 var timerInterval = 1000;
 // 等待时间
-var sleepInterval = 1000;
+var sleepInterval = storage.get('sleepInterval') || 1000;
 // 脚本是否每天自动跑，还是只跑当天
 var isEveryday = true;
 // 当前时间（时间格式：HH:mm:ss）
@@ -34,6 +34,8 @@ var today = getCurrentDate();
 var isRun = false;
 // 运行子线程
 var thread = null;
+// 解锁方式
+var unlockType = storage.get('unlockType1');
 
 // 入口函数
 function main() {
@@ -47,6 +49,11 @@ function main() {
             <timepicker timePickerMode="spinner" id="timepicker1" />
             <text textSize="16sp" textColor="black" text="下班"/>
             <timepicker timePickerMode="spinner" id="timepicker2" />
+            <text textSize="16sp" textColor="black" text="屏幕解锁方式"/>
+            <radiogroup marginTop="10" marginBottom="20" id="radiogroup">
+              <radio id="radio1" text="上划解锁"/>
+              <radio id="radio2" text="凯狗专用"/>
+            </radiogroup>
             <text textSize="16sp" textColor="black" text="操作步骤间隔时间（单位：毫秒，1000毫秒 = 1秒）"/>
             <input hint="请输入" inputType="number" id="sleepInterval" />
             <button marginTop="20" id="submit" text="启动服务"/>
@@ -73,6 +80,9 @@ function main() {
   }
   // 设置间隔时间
   ui.sleepInterval.setText(sleepInterval + '');
+  // 设置初始解锁方式
+  if (!unlockType) { unlockType = ui.radio1.id; }
+  ui.radiogroup.check(unlockType);
   // 点击无障碍服务
   ui.hint1.on("click", function() {
     accessibilityServicePage();
@@ -97,10 +107,16 @@ function main() {
       let time2 = timeFillZero(ui.timepicker2.getHour(), ui.timepicker2.getMinute());
       // 获取指令间隔时间
       sleepInterval = ui.sleepInterval.getText();
+      // 获取解锁方式
+      unlockType = ui.radiogroup.getCheckedRadioButtonId();
       // 保存时间
       times = [time1, time2];
       // 保存时间到本地存储
       storage.put('times', times);
+      // 保存间隔时间到本地存储
+      storage.put('sleepInterval', parseInt(sleepInterval) + '');
+      // 保存解锁方式到本地存储
+      storage.put('unlockType1', parseInt(unlockType) + '');
       // 刷新时间表
       let timestamps = refreshTimestamps(today);
       // 如果时间表不为空，则添加定时器
@@ -329,27 +345,31 @@ function wakeUpAndUnlock() {
     // 等待屏幕点亮
     sleep(sleepInterval);
   }
-  // 针对机型处理
-  var startX = device.width / 2;
-  // 起点 Y 坐标（靠近屏幕底部）
-  var startY = device.height * 0.8;
-  // 终点 Y 坐标（靠近屏幕顶部）
-  var endY = device.height * 0.2;
-  // 进行下划操作（单位：毫秒）
-  swipe(startX, endY, startX, startY, 500);
-  // 等待下拉菜单
-  sleep(sleepInterval);
-  // 进行上划操作（单位：毫秒）
-  swipe(startX, startY, startX, endY, 500);
-  // 解锁，模拟上划解锁操作，起点和终点的坐标取决于你的设备的屏幕分辨率
-  // 屏幕中间的 X 坐标
-  // var startX = device.width / 2;
-  // // 起点 Y 坐标（靠近屏幕底部）
-  // var startY = device.height * 0.8;
-  // // 终点 Y 坐标（靠近屏幕顶部）
-  // var endY = device.height * 0.2;
-  // // 进行上划操作，500 是滑动时间（单位：毫秒）
-  // swipe(startX, startY, startX, endY, 500);
+  if (unlockType == ui.radio2.id) {
+    // 凯狗专用
+    // 针对机型处理
+    var startX = device.width / 2;
+    // 起点 Y 坐标（靠近屏幕底部）
+    var startY = device.height * 0.8;
+    // 终点 Y 坐标（靠近屏幕顶部）
+    var endY = device.height * 0.2;
+    // 进行下划操作（单位：毫秒）
+    swipe(startX, endY, startX, startY, 500);
+    // 等待下拉菜单
+    sleep(sleepInterval);
+    // 进行上划操作（单位：毫秒）
+    swipe(startX, startY, startX, endY, 500);
+  } else {
+    // 解锁，模拟上划解锁操作，起点和终点的坐标取决于你的设备的屏幕分辨率
+    // 屏幕中间的 X 坐标
+    var startX = device.width / 2;
+    // 起点 Y 坐标（靠近屏幕底部）
+    var startY = device.height * 0.8;
+    // 终点 Y 坐标（靠近屏幕顶部）
+    var endY = device.height * 0.2;
+    // 进行上划操作，500 是滑动时间（单位：毫秒）
+    swipe(startX, startY, startX, endY, 500);
+  }
   // 等待解锁完成
   sleep(sleepInterval);
 }
