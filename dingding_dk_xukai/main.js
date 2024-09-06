@@ -14,12 +14,16 @@
 //   exit();
 // }
 
+// 日志
+var isLog = false;
 // 本地存储
-var storage = storages.create('dingding_dk_dzm');
+var storage = storages.create('dingding_dk');
 // 定时器
 var timer = null;
 // 间隔时间（单位：毫秒）
-var interval = 1 * 1000;
+var timerInterval = 1000;
+// 等待时间
+var sleepInterval = 1000;
 // 脚本是否每天自动跑，还是只跑当天
 var isEveryday = true;
 // 当前时间（时间格式：HH:mm:ss）
@@ -43,7 +47,9 @@ function main() {
             <timepicker timePickerMode="spinner" id="timepicker1" />
             <text textSize="16sp" textColor="black" text="下班"/>
             <timepicker timePickerMode="spinner" id="timepicker2" />
-            <button id="submit" text="启动服务"/>
+            <text textSize="16sp" textColor="black" text="操作步骤间隔时间（单位：毫秒，1000毫秒 = 1秒）"/>
+            <input hint="请输入" inputType="number" id="sleepInterval" />
+            <button marginTop="20" id="submit" text="启动服务"/>
             <text textSize="16sp" marginTop="20" textColor="#28A745" id="hint0" text="提示：本服务需要悬浮窗权限、无障碍服务启动，推荐设置电池不优化白名单保活。"/>
             <text textSize="16sp" marginTop="20" textColor="#28A745" id="hint0" text="注意：根据要求，依次打开下面权限，才能正常使用，点击没跳转则多次点击尝试。"/>
             <text textSize="16sp" marginTop="20" textColor="#FF4500" id="hint1" text="【必选】1、启用无障碍服务。（点击）"/>
@@ -64,6 +70,8 @@ function main() {
     ui.timepicker2.setHour(times[1].split(':')[0]);
     ui.timepicker2.setMinute(times[1].split(':')[1]);
   }
+  // 设置间隔时间
+  ui.sleepInterval.setText(sleepInterval + '');
   // 点击无障碍服务
   ui.hint1.on("click", function() {
     accessibilityServicePage();
@@ -86,6 +94,8 @@ function main() {
       let time1 = timeFillZero(ui.timepicker1.getHour(), ui.timepicker1.getMinute());
       // 获取下班时间
       let time2 = timeFillZero(ui.timepicker2.getHour(), ui.timepicker2.getMinute());
+      // 获取指令间隔时间
+      sleepInterval = ui.sleepInterval.getText();
       // 保存时间
       times = [time1, time2];
       // 保存时间到本地存储
@@ -180,9 +190,9 @@ function run (timestamps) {
   if (!isRun) {
     // 子线程处理
     thread = threads.start(function () {
-      console.log('启动服务');
+      if (isLog) { console.log('启动服务'); }
       // 前台保活
-      KeepAliveService.start('dingding_dk_dzm', '凯狗专业列车');
+      KeepAliveService.start('dingding_dk', '凯狗专业列车');
       // 创建悬浮窗
       floaty.closeAll();
       createWindow();
@@ -201,7 +211,7 @@ function run (timestamps) {
 // 停止服务
 function stop () {
   if (isRun) {
-    console.log('停止服务');
+    if (isLog) { console.log('停止服务'); }
     // 停止前台保活
     KeepAliveService.stop();
     // 停止子线程
@@ -228,11 +238,11 @@ function start () {
     // 如果有在其他软件内，退出APP
     home();
     // 等待
-    sleep(1000);
+    sleep(sleepInterval);
     // 回到应用列表第一页
     home();
     // 等待
-    sleep(1000);
+    sleep(sleepInterval);
     // 打开钉钉
     clickDesc('钉钉');
   });
@@ -259,7 +269,7 @@ function addTimer(timestamps) {
     // 是否存在小于当前时间戳的时间表
     const isHas = hasExpiredTimestamps(timestamps);
     // 日志
-    console.log('运行中：', isHas, new Date().getTime(), timestamps);
+    if (isLog) { console.log('运行中：', isHas, new Date().getTime(), timestamps); }
     // 存在则执行
     if (isHas) {
       // 移除已经过期的时间表
@@ -272,7 +282,7 @@ function addTimer(timestamps) {
       // 停止服务
       stop();
     }
-  }, interval);
+  }, timerInterval);
 }
 
 // 移除定时器
@@ -294,11 +304,13 @@ function refreshTimestamps(today) {
   // 移除已经过期的时间表
   timestamps = removeExpiredTimestamps(timestamps);
   // 日志
-  // console.log(`
-  //   时间表：${times}
-  //   日期表：${dates}
-  //   时间戳表：${timestamps}
-  // `);
+  // if (isLog) {
+  //   console.log(`
+  //     时间表：${times}
+  //     日期表：${dates}
+  //     时间戳表：${timestamps}
+  //   `);
+  // }
   // 返回时间戳
   return timestamps
 }
@@ -308,13 +320,13 @@ function wakeUpAndUnlock() {
   // 尝试唤醒屏幕
   device.wakeUpIfNeeded();
   // 等待屏幕点亮
-  sleep(1000);
+  sleep(sleepInterval);
   // 屏幕是否唤醒成功
   if (!device.isScreenOn()) {
     // 如果还没有点亮，强制唤醒
     device.wakeUp();
     // 等待屏幕点亮
-    sleep(1000);
+    sleep(sleepInterval);
   }
   // 针对机型处理
   var startX = device.width / 2;
@@ -325,7 +337,7 @@ function wakeUpAndUnlock() {
   // 进行下划操作（单位：毫秒）
   swipe(startX, endY, startX, startY, 500);
   // 等待下拉菜单
-  sleep(1000);
+  sleep(sleepInterval);
   // 进行上划操作（单位：毫秒）
   swipe(startX, startY, startX, endY, 500);
   // 解锁，模拟上划解锁操作，起点和终点的坐标取决于你的设备的屏幕分辨率
@@ -338,7 +350,7 @@ function wakeUpAndUnlock() {
   // // 进行上划操作，500 是滑动时间（单位：毫秒）
   // swipe(startX, startY, startX, endY, 500);
   // 等待解锁完成
-  sleep(1000);
+  sleep(sleepInterval);
 }
 
 // 创建圆形背景
@@ -386,11 +398,13 @@ function removeExpiredTimestamps(timestamps) {
     return !(expiredTimestamps.indexOf(timestamp) !== -1);
   });
   // 日志输出
-  // console.log(`
-  //   当前时间戳：${currentTimestamp}
-  //   过期时间戳：${expiredTimestamps}
-  //   剩余时间戳：${timestamps}  
-  // `);
+  // if (isLog) {
+  //   console.log(`
+  //     当前时间戳：${currentTimestamp}
+  //     过期时间戳：${expiredTimestamps}
+  //     剩余时间戳：${timestamps}  
+  //   `);
+  // }
   // 返回剩余时间戳
   return timestamps;
 }
