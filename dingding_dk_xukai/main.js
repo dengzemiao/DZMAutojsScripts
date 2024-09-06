@@ -35,7 +35,7 @@ var isRun = false;
 // 运行子线程
 var thread = null;
 // 解锁方式
-var unlockType = storage.get('unlockType1');
+var unlockType = storage.get('unlockType');
 
 // 入口函数
 function main() {
@@ -116,7 +116,7 @@ function main() {
       // 保存间隔时间到本地存储
       storage.put('sleepInterval', parseInt(sleepInterval) + '');
       // 保存解锁方式到本地存储
-      storage.put('unlockType1', parseInt(unlockType) + '');
+      storage.put('unlockType', parseInt(unlockType) + '');
       // 刷新时间表
       let timestamps = refreshTimestamps(today);
       // 如果时间表不为空，则添加定时器
