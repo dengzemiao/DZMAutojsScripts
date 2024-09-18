@@ -36,7 +36,7 @@ function main() {
     // 延迟调用
     sleep(1000);
     // 输入密码
-    utils.setTextId('et_pwd_input', 'dzm340901')
+    utils.setTextId('et_pwd_input', 'test123456')
     // setText('dzm340901')
     // 延迟调用
     sleep(1000);
