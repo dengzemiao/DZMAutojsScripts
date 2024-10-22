@@ -1,4 +1,5 @@
-// 钉钉(dingding)自动打卡脚本 2024-09-02 18:00:00
+// 项目信息：钉钉(dingding)自动打卡脚本 2024-09-02 18:00:00
+// 脚本版本：autojs 4.1.1
 "ui";
 
 // 权限处理
@@ -23,7 +24,7 @@ var timer = null;
 // 间隔时间（单位：毫秒）
 var timerInterval = 1000;
 // 等待时间
-var sleepInterval = storage.get('sleepInterval') || 1000;
+var sleepInterval = parseInt(storage.get('sleepInterval') || 1000);
 // 脚本是否每天自动跑，还是只跑当天
 var isEveryday = true;
 // 当前时间（时间格式：HH:mm:ss）
@@ -35,7 +36,7 @@ var isRun = false;
 // 运行子线程
 var thread = null;
 // 解锁方式
-var unlockType = storage.get('unlockType');
+var unlockType = parseInt(storage.get('unlockType') || 0);
 
 // 入口函数
 function main() {
@@ -106,7 +107,7 @@ function main() {
       // 获取下班时间
       let time2 = timeFillZero(ui.timepicker2.getHour(), ui.timepicker2.getMinute());
       // 获取指令间隔时间
-      sleepInterval = ui.sleepInterval.getText();
+      sleepInterval = parseInt(ui.sleepInterval.getText() || 0);
       // 获取解锁方式
       unlockType = ui.radiogroup.getCheckedRadioButtonId();
       // 保存时间
@@ -114,9 +115,9 @@ function main() {
       // 保存时间到本地存储
       storage.put('times', times);
       // 保存间隔时间到本地存储
-      storage.put('sleepInterval', parseInt(sleepInterval) + '');
+      storage.put('sleepInterval', sleepInterval + '');
       // 保存解锁方式到本地存储
-      storage.put('unlockType', parseInt(unlockType) + '');
+      storage.put('unlockType', unlockType + '');
       // 刷新时间表
       let timestamps = refreshTimestamps(today);
       // 如果时间表不为空，则添加定时器
@@ -149,13 +150,15 @@ function createWindow () {
   );
   // 设置圆形背景
   window.status.setBackground(createCircleDrawable("#4CAF50"));
+  // 延迟确保获得到按钮尺寸
+  sleep(100);
   // 初始化悬浮窗位置到右上角（单位：dp）
   // 获取屏幕宽度和高度
   // var screenWidth = device.width;
   var screenHeight = device.height;
   // 获取悬浮窗的宽度和高度
-  var windowWidth = window.status.getWidth() || 80;
-  var windowHeight = window.status.getHeight() || 80;
+  var windowWidth = window.status.getWidth();
+  var windowHeight = window.status.getHeight();
   // 计算屏幕中心坐标
   // var centerX = (screenWidth - windowWidth) / 2;
   var centerY = (screenHeight - windowHeight) / 2;
