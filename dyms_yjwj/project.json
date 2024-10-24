@@ -1,0 +1,10 @@
+{
+    "name": "抖音秒杀",
+    "main": "main.js",
+    "ignore": [
+        "build"
+    ],
+    "packageName": "com.dzm.dyms.yjwj",
+    "versionName": "1.0.0",
+    "versionCode": 1
+}
