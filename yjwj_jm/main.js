@@ -18,7 +18,7 @@
 // 日志
 var isLog = true;
 // App名称
-var appName = '红包助手';
+var appName = '永劫助手';
 var appNameKey = 'hb_helper';
 // 本地存储
 var storage = storages.create(appNameKey);
